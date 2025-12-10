@@ -1,3 +1,9 @@
-build/
+# Directories
+Build/*
+
+# Files
 sdkconfig
 sdkconfig.old
+
+# Exceptions
+!Build/Git_OTA.bin

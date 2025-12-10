@@ -3,6 +3,7 @@
 #include "uart.h"
 #include "nvs.h"
 #include "wifi.h"
+#include "ota.h"
 
 #define led_pin         14
 #define uart_num        0
@@ -34,12 +35,9 @@ char *nvs_uart_read(const char *key, const char *name){
     }
 }
 
-void ensure_wifi_connection(){
-    if(wifi_connected()) return;
-    
-    uart_write(uart_num, "\r\nWiFi Disconnected.\r\nConnecting...");
+void connect_wifi(){
     while(!wifi_connected()){
-        uart_write(uart_num, ".");
+        // uart_write(uart_num, ".");
         delay_ms(500);
     }
 
@@ -59,13 +57,24 @@ void app_main(){
 
     uart_write(uart_num, "\r\nConnecting to ");
     uart_write(uart_num, wifi_ssid);
-    uart_write(uart_num, " ");
+    uart_write(uart_num, " ... \r\n");
+    connect_wifi();
+
     free(wifi_ssid);
     free(wifi_pin);
 
+    check_ota();
+    char *current = ota_get_version(false);
+    uart_write(uart_num, "Current version: ");
+    uart_write(uart_num, current);
+    uart_write(uart_num, "\r\n");
+    char *latest = ota_get_version(true);
+    uart_write(uart_num, "Latest version: ");
+    uart_write(uart_num, latest);
+    uart_write(uart_num, "\r\n");
+    uart_write(uart_num, ota_up_to_date()? "Up to date\r\n": "Not up to date\r\n");
+
     while(1){
-        ensure_wifi_connection();
-        
         gpio_set_level(led_pin, 1);
         delay_ms(500);
         gpio_set_level(led_pin, 0);
