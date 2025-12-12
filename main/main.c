@@ -5,7 +5,7 @@
 #include "wifi.h"
 #include "ota.h"
 
-#define led_pin         14
+#define led_pin         2
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
@@ -72,7 +72,15 @@ void app_main(){
     uart_write(uart_num, "Latest version: ");
     uart_write(uart_num, latest);
     uart_write(uart_num, "\r\n");
-    uart_write(uart_num, ota_up_to_date()? "Up to date\r\n": "Not up to date\r\n");
+
+    bool up_to_date = ota_up_to_date();
+    if(up_to_date){
+        uart_write(uart_num, "Up to date\r\n");
+    }
+    else if(wifi_connected()){
+        uart_write(uart_num, "Not up to date\r\nUpdating...\r\n");
+        ota_update();
+    }
 
     while(1){
         gpio_set_level(led_pin, 1);

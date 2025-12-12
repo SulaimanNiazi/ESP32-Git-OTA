@@ -1,6 +1,8 @@
 #include "ota.h"
 #include "esp_app_desc.h"
 #include "esp_http_client.h"
+#include "esp_https_ota.h"
+#include "esp_system.h"
 
 extern const char certificate[] asm("_binary_certificate_pem_start");
 static char ota_buffer[OTA_BUFFER_SIZE], current_version[32], latest_version[32];
@@ -43,4 +45,16 @@ char *ota_get_version(const bool latest){
 
 bool ota_up_to_date(){
     return up_to_date;
+}
+
+void ota_update(){
+    if(up_to_date || OTA_DISABLED) return;
+    
+    esp_http_client_config_t client_config = {
+        .url        = OTA_BIN_URL,
+        .cert_pem   = certificate,
+        .timeout_ms = 15000,
+    };
+    esp_https_ota_config_t ota_config = {.http_config = &client_config};
+    if(esp_https_ota(&ota_config) == ESP_OK) esp_restart();
 }
