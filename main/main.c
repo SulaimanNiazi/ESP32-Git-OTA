@@ -4,7 +4,7 @@
 #include "wifi.h"
 #include "ota.h"
 
-#define led_pin         14
+#define led_pin         2
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
