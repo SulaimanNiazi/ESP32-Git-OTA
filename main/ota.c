@@ -2,9 +2,8 @@
 #include "esp_app_desc.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
-#include "esp_system.h"
+#include "esp_crt_bundle.h"
 
-extern const char certificate[] asm("_binary_certificate_pem_start");
 static char ota_buffer[OTA_BUFFER_SIZE], current_version[32], latest_version[32];
 static bool up_to_date = true;
 
@@ -13,11 +12,11 @@ void check_ota(){
     sprintf(current_version, "%s", app->version);
 
     esp_http_client_config_t config = {
-        .method     = HTTP_METHOD_GET,
-        .url        = OTA_VERSION_URL,
-        .host       = OTA_HOST,
-        .port       = OTA_PORT,
-        .cert_pem   = certificate,
+        .method             = HTTP_METHOD_GET,
+        .url                = OTA_VERSION_URL,
+        .host               = OTA_HOST,
+        .port               = OTA_PORT,
+        .crt_bundle_attach  = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if(esp_http_client_open(client, 0) == ESP_OK){
@@ -51,9 +50,9 @@ void ota_update(){
     if(up_to_date || OTA_DISABLED) return;
     
     esp_http_client_config_t client_config = {
-        .url        = OTA_BIN_URL,
-        .cert_pem   = certificate,
-        .timeout_ms = 15000,
+        .url                = OTA_BIN_URL,
+        .crt_bundle_attach  = esp_crt_bundle_attach,
+        .timeout_ms         = 15000,
     };
     esp_https_ota_config_t ota_config = {.http_config = &client_config};
     if(esp_https_ota(&ota_config) == ESP_OK) esp_restart();
