@@ -1,9 +1,8 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "gpio.h"
-#include "delay.h"
 
-static void boot_handler(void* arg){
+static void boot_handler(void *arg){
     while(1){
         if(!gpio_get_level(BOOT_PIN)) nvs_flash_erase();
         delay_ms(10);
@@ -57,7 +56,7 @@ bool init_nvs(){
     return err == ESP_OK;
 }
 
-bool nvs_write(const char* key, const char* value){
+bool nvs_write(const char *key, const char *value){
     nvs_handle_t handle;
     esp_err_t err = nvs_open(NAMESPACE, NVS_READWRITE, &handle);
     err += nvs_set_str(handle, key, value);
@@ -66,13 +65,13 @@ bool nvs_write(const char* key, const char* value){
     return err == ESP_OK;
 }
 
-char* nvs_read(const char* key){
+char *nvs_read(const char *key){
     nvs_handle_t handle;
     esp_err_t err = nvs_open(NAMESPACE, NVS_READONLY, &handle);
     size_t size = 0;
     err += nvs_get_str(handle, key, NULL, &size);
     if(err == ESP_OK && size != 0){
-        char* buffer = malloc(size);
+        char *buffer = malloc(size);
         err = nvs_get_str(handle, key, buffer, &size);
         nvs_close(handle);
         return buffer;

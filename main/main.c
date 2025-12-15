@@ -1,20 +1,18 @@
-#include "delay.h"
 #include "gpio.h"
 #include "uart.h"
 #include "nvs.h"
 #include "wifi.h"
 #include "ota.h"
 
-#define led_pin         2
+#define led_pin         14
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
 
 char *nvs_uart_read(const char *key, const char *name){
-    char *prev = nvs_read(key);
+    char prompt[NVS_MAX_LENGTH], *prev = nvs_read(key);
     if(prev[0]) return prev;
     
-    char prompt[NVS_MAX_LENGTH];
     while(1){
         sprintf(prompt, "\r\n%s not found, Enter %s: ", name, name);
         char *value = uart_read(uart_num, prompt);
