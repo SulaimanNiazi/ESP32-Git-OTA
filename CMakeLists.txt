@@ -5,4 +5,4 @@
 cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(Git_OTA VERSION 1.1.0)
+project(Git_OTA VERSION 1.2.0)

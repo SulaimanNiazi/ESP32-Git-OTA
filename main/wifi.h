@@ -1,14 +1,13 @@
-#ifndef WIFI_H
-#define WIFI_H
+#pragma once
 
 #define WIFI_MAX_RETRIES 100
 
-#include "stdbool.h"
+#include "esp_wifi.h"
 
-void init_wifi(const char* ssid, const char* password);
+void init_wifi(const char *ssid, const char *password);
 void deinit_wifi();
-bool wifi_connected();
-char* wifi_get_ip();
 void wifi_await_connection();
-
-#endif
+bool wifi_connected();
+char *wifi_get_ip();
+char *wifi_get_gateway();
+char *wifi_get_netmask();

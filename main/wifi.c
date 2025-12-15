@@ -1,5 +1,4 @@
 #include "wifi.h"
-#include "esp_wifi.h"
 #include "freertos/event_groups.h"
 
 #define WIFI_CONNECTED_BIT BIT0
@@ -73,12 +72,32 @@ bool wifi_connected(){
     return bits & WIFI_CONNECTED_BIT;
 }
 
-char *wifi_get_ip(){
-    esp_netif_ip_info_t ip_info;
+esp_ip4_addr_t *wifi_get_ip_info(const size_t choice){
+    static esp_netif_ip_info_t ip_info;
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-
     esp_netif_get_ip_info(netif, &ip_info);
-    static char output[16];
-    snprintf(output, 16, IPSTR, IP2STR(&ip_info.ip));
-    return output;
+    
+    switch(choice){
+        case 1: return &ip_info.gw;
+        case 2: return &ip_info.netmask;
+        default: return &ip_info.ip;
+    }
+}
+
+char *wifi_get_ip(){
+    static char ip_buffer[16];
+    snprintf(ip_buffer, 16, IPSTR, IP2STR(wifi_get_ip_info(0)));
+    return ip_buffer;
+}
+
+char *wifi_get_gateway(){
+    static char gw[16];
+    snprintf(gw, 16, IPSTR, IP2STR(wifi_get_ip_info(1)));
+    return gw;
+}
+
+char *wifi_get_netmask(){
+    static char mask[16];
+    snprintf(mask, 16, IPSTR, IP2STR(wifi_get_ip_info(2)));
+    return mask;
 }

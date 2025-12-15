@@ -4,10 +4,10 @@
 #include "wifi.h"
 #include "ota.h"
 
-#define led_pin         2
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
+#define led_pin         14
 
 char *nvs_uart_read(const char *key, const char *name){
     char prompt[NVS_MAX_LENGTH], *prev = nvs_read(key);
@@ -39,9 +39,13 @@ void connect_wifi(){
         delay_ms(500);
     }
 
-    char *ip = wifi_get_ip();
+    char *ip = wifi_get_ip(), *gw = wifi_get_gateway(), *mask = wifi_get_netmask();
     uart_write(uart_num, "\r\nWiFi Connected.\r\nIP: ");
     uart_write(uart_num, ip);
+    uart_write(uart_num, "\r\nGateway: ");
+    uart_write(uart_num, gw);
+    uart_write(uart_num, "\r\nNetmask: ");
+    uart_write(uart_num, mask);
     uart_write(uart_num, "\r\n");
 }
 
