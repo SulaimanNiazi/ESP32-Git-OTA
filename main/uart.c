@@ -1,8 +1,9 @@
 #include "uart.h"
 #include "driver/uart.h"
+#include <stdarg.h>
 
 typedef struct{
-    volatile char buffer[UART_MAX_LENGTH + 1];
+    char buffer[UART_MAX_LENGTH + 1];
     volatile bool receiving;
     volatile size_t count;
     QueueHandle_t queue;
@@ -56,7 +57,7 @@ void uart_event_task(void *arg){
     }
 }
 
-bool init_uart(const unsigned int uart_num, const unsigned int baudrate, const unsigned int tx_pin, const unsigned int rx_pin){
+bool init_uart(const size_t uart_num, const size_t baudrate, const size_t tx_pin, const size_t rx_pin){
     const uart_config_t uart_cfg = {
         .baud_rate  = baudrate,
         .data_bits  = UART_DATA_8_BITS,
@@ -78,14 +79,15 @@ bool init_uart(const unsigned int uart_num, const unsigned int baudrate, const u
     return errors == 0;
 }
 
-int uart_write(const unsigned int uart_num, const char *buffer){
-    size_t size = 0;
-    for(; buffer[size] != '\0'; size++);
-    return uart_write_bytes(uart_num, buffer, size);
+void uart_printf(const size_t uart_num, const char* format, ...){
+    va_list args;
+    va_start(args, format);
+    size_t size = vsnprintf(uarts[uart_num].buffer, UART_MAX_LENGTH, format, args);
+    va_end(args);
+    uart_write_bytes(uart_num, uarts[uart_num].buffer, size);
 }
 
-char *uart_read(const unsigned int uart_num, const char *prompt){
-    uart_write(uart_num, prompt);
+char *uart_read(const size_t uart_num){
     vTaskResume(uarts[uart_num].handler);
     uarts[uart_num].receiving = true;
     while(uarts[uart_num].receiving){
