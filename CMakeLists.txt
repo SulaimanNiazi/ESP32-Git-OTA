@@ -5,6 +5,6 @@
 cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(Git_OTA VERSION 1.2.3)
+project(Git_OTA VERSION 1.2.4)
 
 set(PARTITION_TABLE_CSV ${CMAKE_SOURCE_DIR}/partitions.csv)

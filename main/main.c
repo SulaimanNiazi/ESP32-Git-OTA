@@ -7,7 +7,7 @@
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
-#define led_pin         2
+#define led_pin         14
 
 char *nvs_uart_read(const char *key, const char *name){
     char *prev = nvs_read(key);
