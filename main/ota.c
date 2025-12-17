@@ -27,7 +27,8 @@ void check_ota(){
             esp_http_client_cleanup(handle);
             
             if(len){ // Should be c.366
-                for(; ota_buffer[--len] != ' ';); // Find the last ' '
+                while(ota_buffer[--len] != ' ');
+                while(ota_buffer[--len] != ' ');
                 for(size_t ver_ind = 0, buf_ind = len; ota_buffer[++buf_ind] != ')'; ver_ind++){
                     latest_version[ver_ind] = ota_buffer[buf_ind];
                     if(latest_version[ver_ind] != current_version[ver_ind]) up_to_date = false;
