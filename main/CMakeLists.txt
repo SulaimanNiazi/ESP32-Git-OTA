@@ -1,4 +1,4 @@
 idf_component_register(
-    SRCS "ota.c" "wifi.c" "nvs.c" "delay.c" "gpio.c" "uart.c" "main.c"
+    SRCS "ota.c" "wifi.c" "nvs.c" "delay.c" "gpio.c" "uart.c" "main.c" "log.c"
     INCLUDE_DIRS "."
 )

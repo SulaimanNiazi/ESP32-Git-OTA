@@ -3,11 +3,12 @@
 #include "nvs.h"
 #include "wifi.h"
 #include "ota.h"
+#include "log.h"
 
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
-#define led_pin         14
+#define led_pin         2
 
 char *nvs_uart_read(const char *key, const char *name){
     char *prev = nvs_read(key);
@@ -35,7 +36,7 @@ char *nvs_uart_read(const char *key, const char *name){
 
 void connect_wifi(){
     while(!wifi_connected()){
-        // uart_write(uart_num, ".");
+        uart_printf(uart_num, ".");
         delay_ms(500);
     }
 
@@ -44,19 +45,19 @@ void connect_wifi(){
 }
 
 void app_main(){
-    set_pin(led_pin, GPIO_MODE_OUTPUT, false, false);
+    init_log(1, OTA_LOG_TAG);
     init_uart(uart_num, 115200, tx_pin, rx_pin);
     init_nvs();
 
     const char *wifi_ssid = nvs_uart_read("wifi_ssid", "WiFi SSID"), *wifi_pin = nvs_uart_read("wifi_pin", "WiFi Pin");
     init_wifi(wifi_ssid, wifi_pin);
 
-    uart_printf(uart_num, "Connecting to %s ...\r\n", wifi_ssid);
+    uart_printf(uart_num, "\r\n\r\nConnecting to %s ...", wifi_ssid);
     connect_wifi();
 
     check_ota();
     const char *current = ota_get_version(false), *latest = ota_get_version(true);
-    uart_printf(uart_num, "Current version: %s\r\nLatest version:  %s\r\n", current, latest);
+    uart_printf(uart_num, "\r\nCurrent version: %s\r\nLatest version:  %s\r\n", current, latest);
 
     if(ota_up_to_date()){
         uart_printf(uart_num, "Up to date\r\n");
@@ -66,6 +67,7 @@ void app_main(){
         ota_update();
     }
 
+    set_pin(led_pin, GPIO_MODE_OUTPUT, false, false);
     while(1){
         gpio_set_level(led_pin, 1);
         delay_ms(500);
