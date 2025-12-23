@@ -1,9 +1,10 @@
 #pragma once
 
 #define OTA_DISABLED        false
-#define OTA_BIN_URL         "https://raw.githubusercontent.com/SulaimanNiazi/ESP32-Git-OTA/refs/heads/main/build/Git_OTA.bin"
-#define OTA_VERSION_INDEX   47
-#define OTA_BUFFER_SIZE     60
+#define OTA_HARDWARE        "ESP32 WROOM 32"
+#define OTA_FIRMWARE_URL    "https://raw.githubusercontent.com/SulaimanNiazi/ESP32-Git-OTA/refs/heads/main/firmware"
+#define OTA_VERSION_URL     "https://raw.githubusercontent.com/SulaimanNiazi/ESP32-Git-OTA/refs/heads/main/version.json"
+#define OTA_MAX_LENGTH      200
 #define OTA_LOG_TAG         "OTA"
 
 #include "esp_system.h"
