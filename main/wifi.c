@@ -14,9 +14,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         switch(event_id){
             case WIFI_EVENT_STA_DISCONNECTED:
                 if(++retry_count > WIFI_MAX_RETRIES) xEventGroupClearBits(wifi_event_group, WIFI_CONNECTED_BIT);
+                [[fallthrough]];
             case WIFI_EVENT_STA_START:
                 esp_wifi_connect();
-                break;
             default: break;
         }
     }
