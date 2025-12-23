@@ -1,0 +1,82 @@
+{
+    "firmware": [
+        {
+            "software": "1.0.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.0.1",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.1.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.2.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.2.1",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.2.2",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.2.3",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.2.4",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.3.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.4.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.5.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.6.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        },
+        {
+            "software": "1.7.0",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
+        }
+    ]
+}
