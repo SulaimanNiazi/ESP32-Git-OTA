@@ -1,6 +1,7 @@
 #pragma once
 
-#define WIFI_MAX_RETRIES 100
+#define WIFI_MAX_RETRIES    10
+#define WIFI_LOG_TAG        "WIFI"
 
 #include "esp_wifi.h"
 

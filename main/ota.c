@@ -63,11 +63,8 @@ void ota_update(){
     }
     
     esp_https_ota_config_t ota_config = {.http_config = &http_client};
-    esp_err_t err = esp_https_ota(&ota_config);
-    if(err == ESP_OK){
+    if(!log_error(OTA_LOG_TAG, esp_https_ota(&ota_config), "OTA Failed")){
         ESP_LOGI(OTA_LOG_TAG, "OTA Complete. Restarting...");
         esp_restart();
-    }else{
-        ESP_LOGE(OTA_LOG_TAG, "OTA Failed: %s.", esp_err_to_name(err));
     }
 }
