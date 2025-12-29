@@ -14,8 +14,8 @@ void init_log(size_t count, ...){
     va_end(vl);
 }
 
-bool log_error(const char *tag, const esp_err_t error, const char *detail){
-    if(error == ESP_OK) return false;
+bool loge_success(const char *tag, const esp_err_t error, const char *detail){
+    if(error == ESP_OK) return true;
     ESP_LOGE(tag, "%s: %s.", esp_err_to_name(error), detail);
-    return true;
+    return false;
 }

@@ -95,6 +95,12 @@
             "hardware": [
                 "ESP32 WROOM 32"
             ]
+        },
+        {
+            "software": "2.2.1",
+            "hardware": [
+                "ESP32 WROOM 32"
+            ]
         }
     ]
 }

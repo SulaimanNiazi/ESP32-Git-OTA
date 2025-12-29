@@ -53,7 +53,7 @@ void uart_event_task(void *arg){
                 
                 case UART_FIFO_OVF:
                 case UART_BUFFER_FULL:
-                    log_error(UART_LOG_TAG, uart_flush_input(uart_num), "Failed to flush input");
+                    loge_success(UART_LOG_TAG, uart_flush_input(uart_num), "Failed to flush input");
                     xQueueReset(uarts[uart_num].queue);
                 default: break;
             }
@@ -70,17 +70,13 @@ void init_uart(const size_t uart_num, const size_t baudrate, const size_t tx_pin
         .flow_ctrl  = UART_HW_FLOWCTRL_DISABLE
     };
 
-    log_error(UART_LOG_TAG, uart_param_config(uart_num, &uart_cfg), "Failed to configure UART");
-    log_error(UART_LOG_TAG, uart_set_pin(uart_num, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE), "Failed to assign UART pins");
+    loge_success(UART_LOG_TAG, uart_param_config(uart_num, &uart_cfg), "Failed to configure UART");
+    loge_success(UART_LOG_TAG, uart_set_pin(uart_num, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE), "Failed to assign UART pins");
 
     uart_t uart = {.receiving = false};
     uarts[uart_num] = uart;
 
-    log_error(
-        UART_LOG_TAG,
-        uart_driver_install(uart_num, UART_MAX_LENGTH, 0, 20, &uarts[uart_num].queue, 0),
-        "Failed to install UART driver"
-    );
+    loge_success(UART_LOG_TAG, uart_driver_install(uart_num, UART_MAX_LENGTH, 0, 20, &uarts[uart_num].queue, 0), "Failed to install UART driver");
     xTaskCreate(uart_event_task, "uart_event_task", 4096, (void*const)&uart_num, 12, &uarts[uart_num].handler);
     vTaskSuspend(uarts[uart_num].handler);
 }
