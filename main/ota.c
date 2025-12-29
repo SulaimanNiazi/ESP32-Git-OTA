@@ -90,9 +90,26 @@ void ota_update(){
         .url                = buffer,
         .crt_bundle_attach  = esp_crt_bundle_attach,
     };
-    esp_https_ota_config_t ota_config = {.http_config = &http_client};
-    if(!log_error(OTA_LOG_TAG, esp_https_ota(&ota_config), "OTA Failed")){
-        ESP_LOGI(OTA_LOG_TAG, "OTA Complete. Restarting...");
-        esp_restart();
+    esp_https_ota_config_t ota_config = {
+        .http_config = &http_client,
+    };
+    esp_https_ota_handle_t handle = NULL;
+    
+    esp_err_t error = esp_https_ota_begin(&ota_config, &handle);
+    if(!log_error(OTA_LOG_TAG, error, "Failed to begin HTTPS OTA update")){
+        do{
+            error = esp_https_ota_perform(handle);
+        }
+        while(error == ESP_ERR_HTTPS_OTA_IN_PROGRESS);
+        
+        if(!log_error(OTA_LOG_TAG, error, "OTA upgrade failed")){
+            if(esp_https_ota_is_complete_data_received(handle)){
+                if(!log_error(OTA_LOG_TAG, esp_https_ota_finish(handle), "Failed to clean up OTA upgrade and close HTTPS connection")){
+                    ESP_LOGI(OTA_LOG_TAG, "OTA upgrade complete, rebooting ...");
+                    esp_restart();
+                }
+            } else ESP_LOGE(OTA_LOG_TAG, "Incomplete OTA image received");
+        }
+        esp_https_ota_abort(handle);
     }
 }
