@@ -3,7 +3,7 @@
 #define OTA_DISABLED        false
 #define OTA_RELEASE_URL     "https://raw.githubusercontent.com/SulaimanNiazi/ESP32-Git-OTA-Public/refs/heads/main/firmwares/"
 #define OTA_VERSION_URL     "https://raw.githubusercontent.com/SulaimanNiazi/ESP32-Git-OTA-Public/refs/heads/main/manifest.json"
-#define OTA_MAX_LENGTH      200
+#define OTA_MAX_LENGTH      150
 #define OTA_LOG_TAG         "OTA"
 #define OTA_VERSION_INDEX   47
 

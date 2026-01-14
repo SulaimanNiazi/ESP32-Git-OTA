@@ -109,7 +109,8 @@ idf.py flash monitor
 
 This project uses **Git tags as firmware versions**.
 
-* Each Git tag corresponds to a firmware release
+* Each Git tag corresponds to a firmware release for a specific hardware version
+* A hardware versions are supported up to 32 characters in length.
 * OTA logic checks the latest version for its hardware available on GitHub public repo from the manifest json file and compares it with the current version and hardware stored in its own [CMakeLists.txt](CMakeLists.txt).
 * If a newer version exists, the device:
 

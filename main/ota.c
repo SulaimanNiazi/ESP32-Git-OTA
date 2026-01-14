@@ -9,7 +9,7 @@
 static char buffer[OTA_MAX_LENGTH], current[32], latest[32];
 static bool up_to_date = true;
 static volatile size_t buffer_len = 0;
-const char *hardware = HARDWARE;
+static const char *hardware = HARDWARE;
 
 static esp_err_t event_handler(esp_http_client_event_t *event){
     if(event->event_id != HTTP_EVENT_ON_DATA) return ESP_OK;
@@ -17,20 +17,26 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
     const char *data = event->data;
     const size_t len = event->data_len;
     for(size_t i = 0; i < len; i++){
-        if(data[i] == '}'){
-            buffer[buffer_len] = '\0';
+        switch(data[i]){
+            case ' ': case '\n': continue;
+            
+            case '}':
+                buffer[buffer_len] = '\0';
 
-            if(strstr(buffer, hardware)){
-                char *read = strstr(buffer, "\": \"") + 3;
-                for(size_t write = 0; (*(++read) != '\"') && (write < 32); latest[write++] = *read);
-            }
+                if(strstr(buffer, hardware)){
+                    char *read = strstr(buffer, "\":\"") + 3;
+                    for(size_t write = 0; (*(++read) != '\"') && (write < 32); latest[write++] = *read);
+                }
 
-            buffer_len = 0;
-        }
-        else if(buffer_len < OTA_MAX_LENGTH){
-            buffer[buffer_len++] = data[i];
-        }else{
-            buffer_len = 0;
+                buffer_len = 0;
+                break;
+
+            default:
+                if(buffer_len < OTA_MAX_LENGTH){
+                    buffer[buffer_len++] = data[i];
+                }else{
+                    buffer_len = 0;
+                }
         }
     }
     return ESP_OK;
@@ -38,7 +44,7 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
 
 void check_ota(){
     const esp_app_desc_t *app = esp_app_get_description();
-    sprintf(current, "%s", app->version);
+    strcpy(current, app->version);
     
     esp_http_client_config_t client_config = {
         .url                = OTA_VERSION_URL,

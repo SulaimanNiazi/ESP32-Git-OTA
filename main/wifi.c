@@ -60,8 +60,8 @@ void init_wifi(const char *ssid, const char *password){
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
     };
-    snprintf((char*)config2.sta.ssid, 32, "%s", ssid);
-    snprintf((char*)config2.sta.password, 64, "%s", password);
+    strcpy((char*)config2.sta.ssid, ssid);
+    strcpy((char*)config2.sta.password, password);
 
     loge_success(WIFI_LOG_TAG, esp_wifi_set_mode(WIFI_MODE_STA), "Failed to set STA mode");
     loge_success(WIFI_LOG_TAG, esp_wifi_set_config(WIFI_IF_STA, &config2), "Failed to configure STA");
