@@ -15,6 +15,7 @@ jobs:
       idf_version: v5.5.1
       target: esp32
       build: build/*.bin
+      repo: ESP32-Git-OTA-Public
       bin: ~
       hardware: ~
       version: ~
@@ -75,7 +76,7 @@ jobs:
       - name: Checkout Public Repo
         uses: actions/checkout@v4
         with:
-          repository: SulaimanNiazi/test0
+          repository: SulaimanNiazi/${{env.repo}}
           ref: main
           path: public-repo
           token: ${{secrets.ACCESS_TOKEN}}
