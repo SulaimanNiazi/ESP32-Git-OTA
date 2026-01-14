@@ -1,0 +1,126 @@
+name: Build and upload firmware release
+
+on:
+  push:
+    tags: "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      idf_version: v5.5.1
+      target: esp32
+      build: build/*.bin
+      bin: ~
+      hardware: ~
+      version: ~
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get hardware from CMakeLists.txt
+        run: |
+          hardware=$(grep -oP 'hardware \s*"\K[^"]+' CMakeLists.txt)
+
+          if [ -z "$hardware" ]; then
+            echo "Hardware not found in CMakeLists.txt"
+            exit 1
+          fi
+
+          echo "Detected hardware: $hardware"
+          echo "hardware=$hardware" >> $GITHUB_ENV
+
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: ${{env.idf_version}}
+          target: ${{env.target}}
+          path: '.'
+          command: |
+            idf.py build
+      
+      - name: Get version and firmware binary file
+        env:
+          json: "build/project_description.json"
+        run: |
+          version=$(jq -r '.project_version' "$json")
+          if [ "v$version" != "${{github.ref_name}}" ]; then
+            echo "Version mismatch!\nv$version != ${{github.ref_name}}"
+            exit 1
+          fi
+          echo "version=$version" >> $GITHUB_ENV
+          
+          build="build/$(jq -r '.app_bin' "$json")"
+          echo "build=$build" >> $GITHUB_ENV
+
+      #   bin=$(ls build/*.bin \
+      #   | grep -v bootloader \
+      #   | grep -v partition \
+      #   | grep -v ota_data \
+      #   | head -n 1)
+      #   echo "bin=$bin" >> $GITHUB_ENV
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-binaries
+          path: |
+            ${{env.bin}}
+
+      - name: Checkout Public Repo
+        uses: actions/checkout@v4
+        with:
+          repository: SulaimanNiazi/test0
+          ref: main
+          path: public-repo
+          token: ${{secrets.ACCESS_TOKEN}}
+      
+      - name: Copy firmware to public repo
+        run: |
+          bin="public-repo/firmwares/${{env.hardware}}.bin"
+          echo "bin=$bin" >> $GITHUB_ENV
+
+          mkdir -p public-repo/firmwares
+          cp "${{env.build}}" "$bin"
+
+      - name: Update manifest file
+        run: |
+          sha=$(sha256sum ${{env.bin}} | awk '{print $1}')
+
+          jq \
+            --arg hw "${{env.hardware}}" \
+            --arg ver "${{env.version}}" \
+            --arg sha "$sha" \
+            '.[$hw].version = $ver | .[$hw].sha256 = $sha' \
+            public-repo/manifest.json > manifest.tmp
+          
+          mv manifest.tmp public-repo/manifest.json
+
+      - name: Commit and push changes
+        run: |
+          cd public-repo
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add manifest.json firmwares
+          git commit -m "Update firmware for ${{env.hardware}} (${{env.version}})" || echo "Nothing to commit"
+          git push origin HEAD:main
+
+      - name: Create GitHub Release with firmware
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{github.ref_name}}
+          files: |
+            ${{env.bin}}
+      
+      - name: Delete the tag and release, on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          git push origin ":refs/tags/${{github.ref_name}}" || echo "Could not delete tag"
+          gh release delete "${{github.ref_name}}" --yes || echo "Cant find release to delete"

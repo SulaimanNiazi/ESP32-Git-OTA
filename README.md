@@ -14,6 +14,7 @@ To clearly indicate the active firmware version, each release toggles an LED on 
 * Dual OTA slots with factory fallback
 * GPIO-based triggers for factory reset and test application (optional)
 * ESP-IDF–compliant partition table configuration
+* Proper Embedded CI/CD and management of a private and public repo via GitHub Actions
 
 ---
 
@@ -27,10 +28,18 @@ To clearly indicate the active firmware version, each release toggles an LED on 
   * OTA Slot 1
 * **Update Strategy**:
 
-  * Device checks GitHub for the latest Git tag
-  * Compares the running version with the remote tag
+  * Device checks a manifest.json on a public repo for the latest software version for its hardware.
+  * Compares the running version with the latest version
   * Downloads and installs the update if a newer version exists
   * Safely switches boot partition
+* **CI/CD**:
+
+  * New commit is pushed with a tag starting with "v".
+  * the [workflow](.github/workflows/main.yml) begins and starts building the ESP-IDF firmware.
+  * Extracts the hardware from [CMakeLists.txt](CMakeLists.txt) and the firmware binary and software version from the build/project_description.json file created from the build.
+  * The sha256 hash is generated of the bin file and the manifest.json file of the public repo is updated with the new sha256 and version for the specific hardware.
+  * the bin file is renamed according to the hardware and is placed in the firmwares/ directory of the public repo.
+  * the changes are commited and in case of failure the tag and release are deleted.
 
 ---
 
@@ -45,7 +54,8 @@ To clearly indicate the active firmware version, each release toggles an LED on 
 
 * ESP-IDF **v5.5.1** or newer
 * Git
-* GitHub repository with tagged firmware releases
+* A [GitHub public repository](https://github.com/SulaimanNiazi/ESP32-Git-OTA-Public) with the manifest json file and firmware binaries.
+* A Github private repository with the actual project and a secret variable named "ACCESS_TOKEN" storing an access token for writing to the public repo.
 
 ---
 
@@ -70,27 +80,6 @@ idf.py --version
 ```
 
 ---
-
-## Project Configuration
-
-### 1. Open Menuconfig
-
-```bash
-idf.py menuconfig
-```
-
-### 2. Required Settings
-
-#### Partition Table
-
-* **Partition Table Type**:
-  `Factory app, two OTA definitions`
-
-This enables:
-
-* Safe OTA updates
-* Factory firmware fallback
-* Two OTA slots for seamless upgrades
 
 #### Wi-Fi Configuration
 
@@ -121,10 +110,10 @@ idf.py flash monitor
 This project uses **Git tags as firmware versions**.
 
 * Each Git tag corresponds to a firmware release
-* OTA logic checks the latest version available on GitHub from the [CMakeLists.txt](CMakeLists.txt) and compares it with the current version stored in its own [CMakeLists.txt](CMakeLists.txt).
+* OTA logic checks the latest version for its hardware available on GitHub public repo from the manifest json file and compares it with the current version and hardware stored in its own [CMakeLists.txt](CMakeLists.txt).
 * If a newer version exists, the device:
 
-  1. Downloads the firmware from [build/Git_OTA.bin](build/Git_OTA.bin)
+  1. Downloads the firmware from the raw GitHub link of the public repo
   2. Verifies integrity
   3. Switches to the updated OTA partition
 
