@@ -9,7 +9,6 @@
 static char buffer[OTA_MAX_LENGTH], current[32], latest[32];
 static bool up_to_date = true;
 static volatile size_t buffer_len = 0;
-static esp_https_ota_handle_t ota_handle = NULL;
 const char *hardware = HARDWARE;
 
 static esp_err_t event_handler(esp_http_client_event_t *event){
@@ -84,10 +83,37 @@ void ota_update(){
         .http_config = &client_config,
     };
     
+    esp_https_ota_handle_t ota_handle;
     esp_err_t error = esp_https_ota_begin(&ota_config, &ota_handle);
     if(loge_success(OTA_LOG_TAG, error, "Failed to begin HTTPS OTA update")){
+        // esp_bootloader_desc_t boot_desc;
+        // if(loge_success(OTA_LOG_TAG, esp_https_ota_get_bootloader_img_desc(ota_handle, &boot_desc), "Failed to get bootloader description")){
+        //     ESP_LOGI(OTA_LOG_TAG, "Bootloader version: %s",                 boot_desc.version);
+        //     ESP_LOGI(OTA_LOG_TAG, "IDF version: %s",                        boot_desc.idf_ver);
+        //     ESP_LOGI(OTA_LOG_TAG, "Bootloader compile date and time: %s",   boot_desc.date_time);
+        // }
+        esp_app_desc_t app_desc;
+        if(loge_success(OTA_LOG_TAG, esp_https_ota_get_img_desc(ota_handle, &app_desc), "Failed to get image description")){
+            ESP_LOGI(OTA_LOG_TAG, "Name: %s",               app_desc.project_name);
+            ESP_LOGI(OTA_LOG_TAG, "App Version: %s",        app_desc.version);
+            ESP_LOGI(OTA_LOG_TAG, "App Compile Date: %s",   app_desc.date);
+            ESP_LOGI(OTA_LOG_TAG, "App Compile Time: %s",   app_desc.time);
+        }
+
+        int loaded, total = esp_https_ota_get_image_size(ota_handle);
+        if(total > 0){
+            ESP_LOGI(OTA_LOG_TAG, "Total image size: %d bytes", total);
+        } else {
+            ESP_LOGE(OTA_LOG_TAG, "Cannot get image size.");
+            return;
+        }
+
         do{
             error = esp_https_ota_perform(ota_handle);
+            loaded = esp_https_ota_get_image_len_read(ota_handle);
+            if(loaded != -1){
+                ESP_LOGI(OTA_LOG_TAG, "Updating... %.2f %% (%d/%d)", 100*(float)loaded/(float)total, loaded, total);
+            }
         }
         while(error == ESP_ERR_HTTPS_OTA_IN_PROGRESS);
         
