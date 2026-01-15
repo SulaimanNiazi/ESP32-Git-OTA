@@ -7,11 +7,12 @@
 #include "esp_crt_bundle.h"
 #include <cJSON.h>
 
-static char buffer[OTA_MAX_LENGTH], current[32], latest[32];
+static char buffer[OTA_MAX_LENGTH], current[32], latest[32], sha256[96];
 static bool up_to_date = true;
 static volatile bool manifest_error;
 static volatile size_t buffer_len = 0;
 static const char *hardware = HARDWARE;
+static const esp_app_desc_t *app;
 
 static esp_err_t event_handler(esp_http_client_event_t *event){
     if(event->event_id != HTTP_EVENT_ON_DATA) return ESP_OK;
@@ -32,18 +33,19 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
                             if(substr){
                                 cJSON *root = cJSON_Parse(substr);
                                 if(root){
-                                    cJSON *version = cJSON_GetObjectItem(root, "version");
+                                    cJSON *version = cJSON_GetObjectItem(root, "version"), *sha = cJSON_GetObjectItem(root, "sha256");
                                     
-                                    if(cJSON_IsString(version)){
+                                    if(cJSON_IsString(version) && cJSON_IsString(sha)){
                                         strcpy(latest, version->valuestring);
+                                        strcpy(sha256, sha->valuestring);
                                     }else{
-                                        ESP_LOGE(OTA_LOG_TAG, "Version extracted from json is not a string");
+                                        ESP_LOGE(OTA_LOG_TAG, "Values extracted from json are not strings");
                                         manifest_error = true;
                                     }
 
                                     cJSON_Delete(root);
                                 }else{
-                                    ESP_LOGE(OTA_LOG_TAG, "Failed to parse json manifest."); // perhaps due to low memory
+                                    ESP_LOGE(OTA_LOG_TAG, "Failed to parse json manifest: %s", cJSON_GetErrorPtr()); // perhaps due to low memory
                                     manifest_error = true;
                                     // ESP_LOGI(OTA_LOG_TAG, "Reading json file manually...");
                                     // if(strstr(buffer, hardware)){
@@ -67,10 +69,12 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
     return ESP_OK;
 }
 
-void check_ota(){
-    const esp_app_desc_t *app = esp_app_get_description();
+void init_ota(){
+    app = esp_app_get_description();
     strcpy(current, app->version);
-    
+}
+
+void check_ota(){
     esp_http_client_config_t client_config = {
         .url                = OTA_VERSION_URL,
         .crt_bundle_attach  = esp_crt_bundle_attach,
@@ -122,18 +126,17 @@ void ota_update(){
     esp_https_ota_handle_t ota_handle;
     esp_err_t error = esp_https_ota_begin(&ota_config, &ota_handle);
     if(loge_success(OTA_LOG_TAG, error, "Failed to begin HTTPS OTA update")){
-        // esp_bootloader_desc_t boot_desc;
-        // if(loge_success(OTA_LOG_TAG, esp_https_ota_get_bootloader_img_desc(ota_handle, &boot_desc), "Failed to get bootloader description")){
-        //     ESP_LOGI(OTA_LOG_TAG, "Bootloader version: %s",                 boot_desc.version);
-        //     ESP_LOGI(OTA_LOG_TAG, "IDF version: %s",                        boot_desc.idf_ver);
-        //     ESP_LOGI(OTA_LOG_TAG, "Bootloader compile date and time: %s",   boot_desc.date_time);
-        // }
         esp_app_desc_t app_desc;
         if(loge_success(OTA_LOG_TAG, esp_https_ota_get_img_desc(ota_handle, &app_desc), "Failed to get image description")){
-            ESP_LOGI(OTA_LOG_TAG, "Name: %s",               app_desc.project_name);
-            ESP_LOGI(OTA_LOG_TAG, "App Version: %s",        app_desc.version);
-            ESP_LOGI(OTA_LOG_TAG, "App Compile Date: %s",   app_desc.date);
-            ESP_LOGI(OTA_LOG_TAG, "App Compile Time: %s",   app_desc.time);
+            ESP_LOGI(OTA_LOG_TAG, "Firmware project name: %s",   app_desc.project_name);
+            ESP_LOGI(OTA_LOG_TAG, "Firmware version: %s",        app_desc.version);
+            ESP_LOGI(OTA_LOG_TAG, "Firmware compile date: %s",   app_desc.date);
+            ESP_LOGI(OTA_LOG_TAG, "Firmware compile time: %s",   app_desc.time);
+
+            if(strcmp(app->project_name, app_desc.project_name)){
+                ESP_LOGE(OTA_LOG_TAG, "firmware's project name does not match current project name: %s", app->project_name);
+                return;
+            }
         }
 
         int loaded, total = esp_https_ota_get_image_size(ota_handle);
@@ -144,11 +147,16 @@ void ota_update(){
             return;
         }
 
+        float prev = 0, now;
         do{
             error = esp_https_ota_perform(ota_handle);
             loaded = esp_https_ota_get_image_len_read(ota_handle);
             if(loaded != -1){
-                ESP_LOGI(OTA_LOG_TAG, "Updating... %.2f %% (%d/%d)", 100*(float)loaded/(float)total, loaded, total);
+                now = 100*(float)loaded/(float)total;
+                if(now - prev >= 0.01){
+                    ESP_LOGI(OTA_LOG_TAG, "Updating... %.2f %% (%d/%d)", now, loaded, total);
+                    prev = now;
+                }
             }
         }
         while(error == ESP_ERR_HTTPS_OTA_IN_PROGRESS);

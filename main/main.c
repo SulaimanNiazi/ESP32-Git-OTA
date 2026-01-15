@@ -8,7 +8,7 @@
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
-#define led_pin         2
+#define led_pin         14
 
 char *nvs_uart_read(const char *key, const char *name){
     char *prev = nvs_read(key);
@@ -48,6 +48,7 @@ void app_main(){
     init_log(5, GPIO_LOG_TAG, UART_LOG_TAG, NVS_LOG_TAG, WIFI_LOG_TAG, OTA_LOG_TAG);
     init_uart(uart_num, 115200, tx_pin, rx_pin);
     init_nvs();
+    init_ota();
 
     const char *wifi_ssid = nvs_uart_read("wifi_ssid", "WiFi SSID"), *wifi_pin = nvs_uart_read("wifi_pin", "WiFi Pin");
     init_wifi(wifi_ssid, wifi_pin);

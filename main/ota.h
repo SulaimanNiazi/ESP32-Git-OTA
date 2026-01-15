@@ -9,6 +9,7 @@
 
 #include "esp_system.h"
 
+void init_ota();
 void check_ota();
 char *ota_get_version(const bool latest);
 bool ota_up_to_date();
