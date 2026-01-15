@@ -5,9 +5,11 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "esp_crt_bundle.h"
+#include <cJSON.h>
 
 static char buffer[OTA_MAX_LENGTH], current[32], latest[32];
 static bool up_to_date = true;
+static volatile bool manifest_error;
 static volatile size_t buffer_len = 0;
 static const char *hardware = HARDWARE;
 
@@ -19,23 +21,46 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
     for(size_t i = 0; i < len; i++){
         switch(data[i]){
             case ' ': case '\n': continue;
-            
-            case '}':
-                buffer[buffer_len] = '\0';
-
-                if(strstr(buffer, hardware)){
-                    char *read = strstr(buffer, "\":\"") + 2;
-                    for(size_t write = 0; (*(++read) != '\"') && (write < 32); latest[write++] = *read);
-                }
-
-                buffer_len = 0;
-                break;
 
             default:
                 if(buffer_len < OTA_MAX_LENGTH){
-                    buffer[buffer_len++] = data[i];
+                    buffer[buffer_len] = data[i];
+
+                    if(buffer_len++) if(data[i] == '}'){
+                        if(strstr(buffer, hardware)){
+                            char *substr = strstr(buffer, ":{") + 1;
+                            if(substr){
+                                cJSON *root = cJSON_Parse(substr);
+                                if(root){
+                                    cJSON *version = cJSON_GetObjectItem(root, "version");
+                                    
+                                    if(cJSON_IsString(version)){
+                                        strcpy(latest, version->valuestring);
+                                    }else{
+                                        ESP_LOGE(OTA_LOG_TAG, "Version extracted from json is not a string");
+                                        manifest_error = true;
+                                    }
+
+                                    cJSON_Delete(root);
+                                }else{
+                                    ESP_LOGE(OTA_LOG_TAG, "Failed to parse json manifest."); // perhaps due to low memory
+                                    manifest_error = true;
+                                    // ESP_LOGI(OTA_LOG_TAG, "Reading json file manually...");
+                                    // if(strstr(buffer, hardware)){
+                                    //     char *read = strstr(buffer, "\":\"") + 2;
+                                    //     for(size_t write = 0; (*(++read) != '\"') && (write < 32); latest[write++] = *read);
+                                    // }
+                                }
+                                
+                                return ESP_FAIL; // End request
+                            }
+                        }
+                        goto clear;
+                    }
                 }else{
+                    clear:
                     buffer_len = 0;
+                    buffer[0] = '\0';
                 }
         }
     }
@@ -53,14 +78,19 @@ void check_ota(){
     };
     esp_http_client_handle_t client_handle = esp_http_client_init(&client_config);
     
-    if(loge_success(OTA_LOG_TAG, esp_http_client_perform(client_handle), "HTTPS Request failed")){
+    manifest_error = false;
+    esp_http_client_perform(client_handle);
+    if(manifest_error){
+        ESP_LOGE(OTA_LOG_TAG, "HTTPS request failed to read manifest");
+        latest[0] = 0;
+    }else{
         for(size_t i = 0; current[i] && (i < 32); i++){
             if(current[i] != latest[i]){
                 up_to_date = false;
                 break;
             }
         }
-    }else latest[0] = 0;
+    }
     esp_http_client_cleanup(client_handle);
 }
 
