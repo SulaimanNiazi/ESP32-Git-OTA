@@ -24,7 +24,7 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
                 buffer[buffer_len] = '\0';
 
                 if(strstr(buffer, hardware)){
-                    char *read = strstr(buffer, "\":\"") + 3;
+                    char *read = strstr(buffer, "\":\"") + 2;
                     for(size_t write = 0; (*(++read) != '\"') && (write < 32); latest[write++] = *read);
                 }
 
