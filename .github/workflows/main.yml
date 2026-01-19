@@ -2,7 +2,7 @@ name: Build and upload firmware release
 
 on:
   push:
-    tags: "v*"
+    tags: ["v*"]
 
 permissions:
   contents: write
@@ -14,11 +14,12 @@ jobs:
     env:
       idf_version: v5.5.1
       target: esp32
-      build: build/*.bin
       repo: ESP32-Git-OTA-Public
-      bin: ~
-      hardware: ~
-      version: ~
+      elf: ""
+      build: ""
+      bin: ""
+      hardware: ""
+      version: ""
 
     steps:
       - name: Checkout repository
@@ -57,7 +58,9 @@ jobs:
           echo "version=$version" >> $GITHUB_ENV
           
           build="build/$(jq -r '.app_bin' "$json")"
+          elf="build/$(jq -r '.app_elf' "$json")"
           echo "build=$build" >> $GITHUB_ENV
+          echo "elf=$elf" >> $GITHUB_ENV
 
       #   bin=$(ls build/*.bin \
       #   | grep -v bootloader \
@@ -71,7 +74,7 @@ jobs:
         with:
           name: firmware-binaries
           path: |
-            ${{env.bin}}
+            ${{env.build}}
 
       - name: Checkout Public Repo
         uses: actions/checkout@v4
@@ -91,7 +94,7 @@ jobs:
 
       - name: Update manifest file
         run: |
-          sha=$(sha256sum ${{env.bin}} | awk '{print $1}')
+          sha=$(sha256sum ${{env.elf}} | awk '{print $1}')
 
           jq \
             --arg hw "${{env.hardware}}" \

@@ -8,4 +8,4 @@ set(hardware "ESP32WROOM32")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 add_compile_definitions(HARDWARE="${hardware}")
 
-project(Git_OTA VERSION 3.2.0)
+project(Git_OTA VERSION 3.3.0)

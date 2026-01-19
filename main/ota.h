@@ -11,6 +11,7 @@
 
 void init_ota();
 void check_ota();
+const char *ota_get_project();
 char *ota_get_version(const bool latest);
 bool ota_up_to_date();
 void ota_update();

@@ -2,9 +2,9 @@
 #include "log.h"
 
 #include "esp_app_desc.h"
-#include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "esp_crt_bundle.h"
+
 #include <cJSON.h>
 
 static char buffer[OTA_MAX_LENGTH], current[32], latest[32], sha256[96];
@@ -13,6 +13,11 @@ static volatile bool manifest_error;
 static volatile size_t buffer_len = 0;
 static const char *hardware = HARDWARE;
 static const esp_app_desc_t *app;
+
+void init_ota(){
+    app = esp_app_get_description();
+    strcpy(current, app->version);
+}
 
 static esp_err_t event_handler(esp_http_client_event_t *event){
     if(event->event_id != HTTP_EVENT_ON_DATA) return ESP_OK;
@@ -69,11 +74,6 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
     return ESP_OK;
 }
 
-void init_ota(){
-    app = esp_app_get_description();
-    strcpy(current, app->version);
-}
-
 void check_ota(){
     esp_http_client_config_t client_config = {
         .url                = OTA_VERSION_URL,
@@ -96,6 +96,10 @@ void check_ota(){
         }
     }
     esp_http_client_cleanup(client_handle);
+}
+
+const char *ota_get_project(){
+    return app->project_name;
 }
 
 char *ota_get_version(const bool Latest){

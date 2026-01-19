@@ -8,7 +8,7 @@
 #define uart_num        0
 #define tx_pin          1
 #define rx_pin          3
-#define led_pin         14
+#define led_pin         2
 
 char *nvs_uart_read(const char *key, const char *name){
     char *prev = nvs_read(key);
@@ -50,10 +50,13 @@ void app_main(){
     init_nvs();
     init_ota();
 
+    const char *project = ota_get_project(), *hardware = HARDWARE;
+    uart_printf(uart_num, "\r\n\r\nProject:  %s\r\nHardware: %s\r\n\r\n", project, hardware);
+
     const char *wifi_ssid = nvs_uart_read("wifi_ssid", "WiFi SSID"), *wifi_pin = nvs_uart_read("wifi_pin", "WiFi Pin");
     init_wifi(wifi_ssid, wifi_pin);
 
-    uart_printf(uart_num, "\r\n\r\nConnecting to %s ...", wifi_ssid);
+    uart_printf(uart_num, "Connecting to %s ...", wifi_ssid);
     connect_wifi();
 
     check_ota();
@@ -64,7 +67,7 @@ void app_main(){
         uart_printf(uart_num, "Up to date\r\n");
     }
     else if(wifi_connected()){
-        uart_printf(uart_num, "Not up to date\r\nUpdating...\r\n");
+        uart_printf(uart_num, "Not up to date\r\nUpdating...\r\n\r\n");
         ota_update();
     }
 
