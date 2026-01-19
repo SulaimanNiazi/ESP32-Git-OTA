@@ -7,7 +7,7 @@
 
 #include <cJSON.h>
 
-static char buffer[OTA_MAX_LENGTH], current[32], latest[32], sha256[96];
+static char buffer[OTA_MAX_LENGTH], current[32], latest[32], sha256[64];
 static bool up_to_date = true;
 static volatile bool manifest_error;
 static volatile size_t buffer_len = 0;
@@ -42,7 +42,7 @@ static esp_err_t event_handler(esp_http_client_event_t *event){
                                     
                                     if(cJSON_IsString(version) && cJSON_IsString(sha)){
                                         strcpy(latest, version->valuestring);
-                                        strcpy(sha256, sha->valuestring);
+                                        strncpy(sha256, sha->valuestring, sizeof(sha256));
                                     }else{
                                         ESP_LOGE(OTA_LOG_TAG, "Values extracted from json are not strings");
                                         manifest_error = true;
@@ -130,25 +130,38 @@ void ota_update(){
     esp_https_ota_handle_t ota_handle;
     esp_err_t error = esp_https_ota_begin(&ota_config, &ota_handle);
     if(loge_success(OTA_LOG_TAG, error, "Failed to begin HTTPS OTA update")){
-        esp_app_desc_t app_desc;
-        if(loge_success(OTA_LOG_TAG, esp_https_ota_get_img_desc(ota_handle, &app_desc), "Failed to get image description")){
-            ESP_LOGI(OTA_LOG_TAG, "Firmware project name: %s",   app_desc.project_name);
-            ESP_LOGI(OTA_LOG_TAG, "Firmware version: %s",        app_desc.version);
-            ESP_LOGI(OTA_LOG_TAG, "Firmware compile date: %s",   app_desc.date);
-            ESP_LOGI(OTA_LOG_TAG, "Firmware compile time: %s",   app_desc.time);
+        esp_app_desc_t image;
+        if(loge_success(OTA_LOG_TAG, esp_https_ota_get_img_desc(ota_handle, &image), "Failed to get image description")){
+            ESP_LOGI(OTA_LOG_TAG, "Image project name: %s",   image.project_name);
+            ESP_LOGI(OTA_LOG_TAG, "Image version: %s",        image.version);
+            ESP_LOGI(OTA_LOG_TAG, "Image compile date: %s",   image.date);
+            ESP_LOGI(OTA_LOG_TAG, "Image compile time: %s",   image.time);
 
-            if(strcmp(app->project_name, app_desc.project_name)){
-                ESP_LOGE(OTA_LOG_TAG, "firmware's project name does not match current project name: %s", app->project_name);
+            if(strcmp(app->project_name, image.project_name)){
+                ESP_LOGE(OTA_LOG_TAG, "Image's project name (%s) does not match the current project name (%s)", image.project_name, app->project_name);
                 return;
             }
+
+            ESP_LOGI(OTA_LOG_TAG, "SHA256:");
+            char byte[4];
+            for(size_t i = 0; i < 64; i+=2){
+                snprintf(byte, sizeof(byte), "%02x", image.app_elf_sha256[i/2]);
+                printf("%s", byte);
+                if((sha256[i] != byte[0])||(sha256[i+1] != byte[1])){
+                    printf("\r\n");
+                    ESP_LOGE(OTA_LOG_TAG, "SHA256 mismatch");
+                    return;
+                }
+            }
+            printf("\r\n");
         }
 
         int loaded, total = esp_https_ota_get_image_size(ota_handle);
-        if(total > 0){
-            ESP_LOGI(OTA_LOG_TAG, "Total image size: %d bytes", total);
-        } else {
+        if(total == -1){
             ESP_LOGE(OTA_LOG_TAG, "Cannot get image size.");
             return;
+        } else {
+            ESP_LOGI(OTA_LOG_TAG, "Total image size: %d bytes", total);
         }
 
         float prev = 0, now;
