@@ -75,6 +75,7 @@ jobs:
           name: firmware-binaries
           path: |
             ${{env.build}}
+            ${{env.elf}}
 
       - name: Checkout Public Repo
         uses: actions/checkout@v4
@@ -120,6 +121,7 @@ jobs:
           tag_name: ${{github.ref_name}}
           files: |
             ${{env.bin}}
+            ${{env.elf}}
       
       - name: Delete the tag and release, on failure
         if: failure()
